@@ -227,7 +227,7 @@ func (rf *Raft) getLogTermAndIndex() (int, int) {
 		index = rf.logs[size - 1].Index
 		term = rf.logs[size - 1].Term
 	} else {
-		index  =rf.logSnapshot.Index
+		index = rf.logSnapshot.Index
 		term = rf.logSnapshot.Term
 	}
 
@@ -428,8 +428,8 @@ func (rf *Raft) apply() {
 			endIndex 	= rf.logSnapshot.Index
 			endTerm 	= rf.logSnapshot.Term
 		} else {
-			endTerm 	= rf.logs[rf.lastApplied - 1 - rf.logSnapshot.Index].Term
-			endIndex 	= rf.logs[rf.lastApplied - 1 - rf.logSnapshot.Index].Index
+			endTerm 	= rf.logs[appliedIndex].Term
+			endIndex 	= rf.logs[appliedIndex].Index
 		}
 		rf.println(rf.me, "apply log", rf.lastApplied - 1, endTerm, "-", endIndex, "/", last)
 	}
@@ -454,6 +454,7 @@ func (rf *Raft) isOldRequest(req *AppendEntries) bool {
 }
 
 func (rf *Raft) resetCandidateTimer() {
+
 	randCnt := rf.randtime.Intn(250)
 	duration := time.Duration(randCnt) * time.Millisecond + CandidateDuration
 	rf.electionTimer.Reset(duration)
@@ -506,6 +507,7 @@ func (rf *Raft) readPersist(data []byte) {
 		rf.println("Error in unmarshal raft state")
 	} else {
 		rf.currentTerm = currentTerm
+		//rf.setCommitIndex(commitIndex)
 		rf.commitIndex = commitIndex
 		rf.lastApplied = 0
 		rf.logs = logs
@@ -665,7 +667,7 @@ func (rf *Raft) RequestAppendEntries(req *AppendEntries, resp *RespEntries) {
 	rf.persist()
 }
 
-func (rf *Raft) replicateLogTo(peer int) bool {
+func (rf *Raft)  replicateLogTo(peer int) bool {
 	replicateRst := false
 	if peer == rf.me {
 		return replicateRst
@@ -732,7 +734,7 @@ func (rf *Raft) ReplicateLogLoop(peer int) {
 			success := rf.replicateLogTo(peer)
 			if success {
 				rf.apply()
-				rf.replicateLogNow()
+				//rf.replicateLogNow()
 				rf.persist()
 			}
 		}
